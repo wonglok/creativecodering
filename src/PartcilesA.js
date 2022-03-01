@@ -20,8 +20,7 @@ import {
 import { getCurlNoise } from "./curlNosie";
 import { useFrame } from "@react-three/fiber";
 
-import { Bloom, EffectComposer } from "@react-three/postprocessing";
-import { BlurPass, Resizer, KernelSize } from "postprocessing";
+// import { BlurPass, Resizer, KernelSize } from "postprocessing";
 
 export function ParticlesA() {
   //
@@ -43,12 +42,24 @@ export function ParticlesA() {
       const sizeData = [];
       let variations = [
         { size: 0.333 * 1.0, color: new Color("#ffffff") },
-        { size: 0.333 * 1.0, color: new Color("#ffffff") },
         { size: 0.333 * 1.5, color: new Color("#ffffff") },
-        { size: 0.333 * 2.0, color: new Color("#ff00ff").offsetHSL(0, 0, 0.1) },
-        { size: 0.333 * 4.0, color: new Color("#ff00ff").offsetHSL(0, 0, 0.1) },
-        { size: 0.333 * 4.0, color: new Color("#00ffff") },
-        { size: 0.333 * 5.0, color: new Color("#00ffff") },
+        { size: 0.333 * 2.0, color: new Color("#ffffff") },
+        {
+          size: 0.333 * 2.0,
+          color: new Color("#ff00ff").add(new Color("#005555")),
+        },
+        {
+          size: 0.333 * 4.0,
+          color: new Color("#ff00ff").add(new Color("#005555")),
+        },
+        {
+          size: 0.333 * 4.0,
+          color: new Color("#00ffff").add(new Color("#0000ff")),
+        },
+        {
+          size: 0.333 * 5.0,
+          color: new Color("#00ffff").add(new Color("#0000ff")),
+        },
       ];
 
       let tubularSegments = 128;
@@ -175,29 +186,31 @@ export function ParticlesA() {
           float y2 = radius * cos(PIE * 2.0 * angle2);
           float z2 =  0.0;
 
-          vec3 center = vec3(x1,y1,z1);
-          vec3 center2 = vec3(x2,y2,z2);
+          vec3 origin = vec3(x1,y1,z1);
+
+          vec3 origin2 = vec3(x2,y2,z2);
 
           //
           vec4 vert = vec4(
             position * dotSize
-            + center
-            + 2.0 * curlNoise(center2 + time * 0.02)
+            + origin
+            + 2.0 * curlNoise(origin2 + time * 0.02)
+            + 1.5 * snoiseVec3(origin *  + time * 0.01)
           , 1.0);
 
           // gl_PointSize= 1.0 * ;
           gl_Position = projectionMatrix * modelViewMatrix * vert;
         }
         `,
-        fragmentShader: `
-        varying float vProgress;
-        varying vec4 vRand4;
-        varying vec3 vColor;
-        uniform float time;
+        fragmentShader: /* glsl */ `
+          varying float vProgress;
+          varying vec4 vRand4;
+          varying vec3 vColor;
+          uniform float time;
 
-        void main (void) {
-          gl_FragColor = vec4(vColor, mod(vProgress * sin(vRand4.x + time), 1.0));
-        }
+          void main (void) {
+            gl_FragColor = vec4(vColor, mod(vProgress * sin(vRand4.x + time), 1.0));
+          }
         `,
         transparent: true,
         side: DoubleSide,
@@ -213,25 +226,5 @@ export function ParticlesA() {
     run();
   }, []);
 
-  return (
-    <group>
-      <EffectComposer>
-        <Bloom luminanceThreshold={0.3} luminanceSmoothing={1.3} height={960} />
-        {/* <SelectiveBloom
-          lights={[]} // ⚠️ REQUIRED! all relevant lights
-          selection={[pointRef]} // selection of objects that will have bloom effect
-          selectionLayer={10} // selection layer
-          intensity={1.0} // The bloom intensity.
-          blurPass={undefined} // A blur pass.
-          width={Resizer.AUTO_SIZE} // render width
-          height={Resizer.AUTO_SIZE} // render height
-          kernelSize={KernelSize.LARGE} // blur kernel size
-          luminanceThreshold={0.9} // luminance threshold. Raise this value to mask out darker elements in the scene.
-          luminanceSmoothing={0.025} // smoothness of the luminance threshold. Range is [0, 1]
-        /> */}
-      </EffectComposer>
-
-      {prim}
-    </group>
-  );
+  return <group>{prim}</group>;
 }
